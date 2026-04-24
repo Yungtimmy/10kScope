@@ -1372,7 +1372,11 @@ fetchAndRenderPrices();
 
 // Auto-refresh prices every 30 seconds
 setInterval(fetchAndRenderPrices, 30000);
-
+  
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+  }
+  
 // Live price flicker
 setInterval(() => {
   const cards = document.querySelectorAll('.pc-price');
