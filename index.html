@@ -699,16 +699,19 @@ nav {
     <div class="logo-dot"></div>
     10kScope
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchPage('tracker')">CA Tracker</button>
-    <button class="nav-tab" onclick="switchPage('prices')">Prices</button>
-    <button class="nav-tab" onclick="switchPage('wallet')">Wallet</button>
-  </div>
   <div class="nav-right">
     <div class="network-badge"><div class="net-dot"></div>Monad</div>
     <button class="connect-btn" onclick="connectWallet()">Connect Wallet</button>
+    <button class="hamburger" onclick="toggleMenu()">☰</button>
   </div>
 </nav>
+
+<!-- Mobile drawer -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="nav-tab active" onclick="switchPage('tracker');toggleMenu()">CA Tracker</button>
+  <button class="nav-tab" onclick="switchPage('prices');toggleMenu()">Prices</button>
+  <button class="nav-tab" onclick="switchPage('wallet');toggleMenu()">Wallet</button>
+</div>
 
 <!-- ===== PAGE 1: CA TRACKER ===== -->
 <div class="page active" id="page-tracker">
