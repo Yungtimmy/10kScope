@@ -662,11 +662,27 @@ nav {
 
 .wnw-val { font-size: 1.3rem; }
 
-@media (max-width: 400px) {
-  .nav-tabs .nav-tab {
-    padding: 5px 7px;
-    font-size: .68rem;
-  }
+@media(max-width:768px) {
+  nav { padding: 0 .75rem; height: 56px; gap: 6px; }
+  .logo { font-size: .9rem; flex-shrink: 0; }
+  .nav-tabs { flex-shrink: 1; }
+  .nav-tabs .nav-tab { padding: 5px 8px; font-size: .7rem; }
+  .connect-btn { padding: 6px 10px; font-size: .72rem; flex-shrink: 0; }
+  .network-badge { display: none; }
+  .page { padding: .75rem; }
+  .search-row { flex-direction: column; }
+  .search-btn { width: 100%; }
+  .ca-stats { grid-template-columns: repeat(2, 1fr); }
+  .prices-grid { grid-template-columns: 1fr; }
+  .prices-header { flex-direction: column; align-items: flex-start; }
+  .page-heading { font-size: 1.3rem; }
+  .wallet-header { flex-wrap: wrap; }
+  .wallet-net-worth { margin-left: 0; width: 100%; border-top: 1px solid var(--border); padding-top: 10px; }
+  .wnw-val { font-size: 1.3rem; }
+  .filter-row { justify-content: center; flex-wrap: wrap; }
+  .pc-stats { flex-wrap: wrap; }
+  .holdings-list, .tx-list { gap: 8px; }
+                                                                             }
   .logo { font-size: .9rem; }
     }
 </style>
