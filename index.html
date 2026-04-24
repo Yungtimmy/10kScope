@@ -686,9 +686,38 @@ nav {
   .filter-row { justify-content: center; flex-wrap: wrap; }
   .pc-stats { flex-wrap: wrap; }
   .holdings-list, .tx-list { gap: 8px; }
-                                                                             }
+}
   .logo { font-size: .9rem; }
-    }
+}
+  .hamburger {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.mobile-menu {
+  display: none;
+  flex-direction: column;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem;
+  gap: 8px;
+  position: sticky;
+  top: 56px;
+  z-index: 99;
+}
+
+.mobile-menu.open { display: flex; }
+
+@media(max-width: 768px) {
+  .nav-tabs { display: none; }
+  .hamburger { display: block; }
+}
 </style>
 </head>
 <body>
