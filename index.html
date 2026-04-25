@@ -1228,7 +1228,70 @@ async function fetchAndRenderPrices() {
       renderPrices('all');
       return;
     }
+    // ========== CATEGORY MAP ==========
+const TOKEN_CATEGORY_MAP = {
+  'MON':    'defi',
+  'WMON':   'defi',
+  'SHMON':  'defi',
+  'USDC':   'stablecoin',
+  'USDT':   'stablecoin',
+  'CHOG':   'meme',
+  'YAKI':   'meme',
+  'DAK':    'meme',
+  'MPUNK':  'nft',
+  'ARENA':  'gaming',
+  'NQUEST': 'gaming',
+};
 
+function getCategory(sym) {
+  return TOKEN_CATEGORY_MAP[(sym || '').toUpperCase()] || 'other';
+}
+
+let currentFilter = 'all';
+
+function filterCoins(cat, el) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderPricesFromData(allFetchedPairs);
+}
+
+function renderPriceCard(p) {
+  const change = parseFloat(p.priceChange?.h24 || 0);
+  const changeClass = change >= 0 ? 'pos' : 'neg';
+  const changeSign = change >= 0 ? '+' : '';
+  const price = parseFloat(p.priceUsd || 0);
+  const priceStr = price === 0 ? 'N/A'
+    : price < 0.000001 ? '$' + price.toExponential(2)
+    : price < 0.01 ? '$' + price.toFixed(6)
+    : price < 1 ? '$' + price.toFixed(4)
+    : '$' + price.toFixed(2);
+  const sparks = generateSparks(change);
+  const sym = p.baseToken?.symbol || '??';
+  const colors = ['#e83d8a','#00ffb3','#f5c542','#ff6eb4','#4dc8ff','#a4ff72','#ff7c4d','#c884ff'];
+  const col = colors[Math.abs((sym.charCodeAt(0)||0) + (sym.charCodeAt(1)||0)) % colors.length];
+
+  return `
+    <div class="price-card" onclick="window.open('${p.url || '#'}','_blank')">
+      <div class="pc-top">
+        <div class="pc-icon" style="background:${col}22;color:${col}">${sym.slice(0,2)}</div>
+        <div>
+          <div class="pc-name">${p.baseToken?.name || 'Unknown'}</div>
+          <div class="pc-ticker">$${sym}</div>
+        </div>
+      </div>
+      <div class="pc-price">${priceStr}</div>
+      <div class="pc-change ${changeClass}">${changeSign}${change.toFixed(2)}% (24h)</div>
+      <svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none">
+        <polyline points="${sparks}" fill="none" stroke="${change >= 0 ? 'var(--green)' : 'var(--red)'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="pc-stats">
+        <div class="pc-stat"><div class="lbl">Mkt Cap</div><div class="val">${formatNum(p.marketCap)}</div></div>
+        <div class="pc-stat"><div class="lbl">Vol 24h</div><div class="val">${formatNum(p.volume?.h24)}</div></div>
+        <div class="pc-stat"><div class="lbl">Liquidity</div><div class="val">${formatNum(p.liquidity?.usd)}</div></div>
+      </div>
+    </div>`;
+}
     renderPricesFromData(allFetchedPairs);
   } catch (err) {
     console.error(err);
