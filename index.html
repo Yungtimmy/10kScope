@@ -769,7 +769,7 @@ async function connectWallet() {
 }
 
 // ========== CA TRACKER ==========
-async function lookupCA() { /* upgraded: real Claude AI analysis via /api/analyze */
+async function lookupCA() { /* upgraded: real Gemini AI analysis via /api/analyze */
   const val = document.getElementById('caInput').value.trim();
   if (!val) { showToast('⚠️ Please enter a contract address'); return; }
 
@@ -916,7 +916,7 @@ function renderCAResult(token) {
 
   setTimeout(() => {
     const el = document.getElementById('aiTextArea');
-    if (el) { el.innerHTML = '<span style="color:var(--muted);font-size:.82rem;animation:shimmer 1.5s infinite">✦ Analyzing with Claude AI...</span>'; }
+    if (el) { el.innerHTML = '<span style="color:var(--muted);font-size:.82rem;animation:shimmer 1.5s infinite">✦ Analyzing...</span>'; }
   }, 100);
 }
 
