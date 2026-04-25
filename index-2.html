@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>10kScope — CA Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #080810;
+    --surface: #0e0e1a;
+    --card: #121224;
+    --border: #1e1e38;
+    --accent: #836EF9;
+    --accent2: #200052;
+    --green: #00ffb3;
+    --red: #ff4d6d;
+    --yellow: #f5c542;
+    --text: #e8e8ff;
+    --muted: #5a5a8a;
+    --glow: rgba(131,110,249,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(131,110,249,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 80% 80%, rgba(0,255,179,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ---- NAVBAR ---- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    height: 56px;
+    background: rgba(8,8,16,0.85);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .95rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.5;transform:scale(1.3)}
+  }
+
+  /* Desktop nav tabs — hidden on mobile */
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .nav-tab {
+    padding: 6px 18px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all .2s;
+    border: none;
+    background: transparent;
+    font-family: 'Syne', sans-serif;
+    white-space: nowrap;
+  }
+
+  .nav-tab.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(131,110,249,0.4);
+  }
+
+  .nav-tab:hover:not(.active) { color: var(--text); }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .connect-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #5b45c8);
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all .2s;
+    box-shadow: 0 0 16px rgba(131,110,249,0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .connect-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(131,110,249,0.5); }
+
+  .network-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .72rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    flex-shrink: 0;
+  }
+
+  .net-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  /* Hamburger — only shown on mobile */
+  .hamburger {
+    display: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* Mobile drawer */
+  .mobile-menu {
+    display: none;
+    flex-direction: column;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    gap: 6px;
+    position: sticky;
+    top: 56px;
+    z-index: 99;
+  }
+
+  .mobile-menu.open { display: flex; }
+
+  .mobile-menu .nav-tab {
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: .85rem;
+  }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 768px) {
+    .nav-tabs { display: none; }
+    .network-badge { display: none; }
+    .hamburger { display: block; }
+  }
+
+  /* ---- PAGES ---- */
+  .page { display: none; padding: 1.5rem 1rem; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+  .page.active { display: block; animation: fadeUp .3s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ---- PAGE 1: CA TRACKER ---- */
+  .search-area { margin-bottom: 2rem; }
+
+  .search-label {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: .5rem;
+    text-align: center;
+  }
+
+  .search-row { display: flex; gap: 10px; }
+
+  .ca-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: .85rem;
+    outline: none;
+    transition: border .2s;
+  }
+
+  .ca-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+  .ca-input::placeholder { color: var(--muted); }
+
+  .search-btn {
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+
+  .search-btn:hover { background: #9580ff; }
+
+  .section-title {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .ca-result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.2rem;
+    animation: fadeUp .3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ca-result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .ca-top { display: flex; align-items: center; gap: 14px; margin-bottom: 1rem; flex-wrap: wrap; }
+
+  .token-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .token-info h2 { font-size: 1.1rem; font-weight: 800; }
+  .token-info .ticker { font-size: .78rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .token-addr { font-family: 'Space Mono', monospace; font-size: .72rem; color: var(--muted); margin-top: 2px; cursor: pointer; }
+  .token-addr:hover { color: var(--accent); }
+
+  .ca-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .stat-box .s-label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .stat-box .s-val { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+
+  .ai-preview {
+    background: linear-gradient(135deg, rgba(131,110,249,0.08), rgba(0,255,179,0.04));
+    border: 1px solid rgba(131,110,249,0.25);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-top: .8rem;
+  }
+
+  .ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: .5rem;
+  }
+
+  .ai-badge::before { content: '✦'; }
+
+  .ai-text { font-size: .85rem; line-height: 1.6; color: #b0b0d8; }
+  .ai-text.loading { color: var(--muted); animation: shimmer 1.5s infinite; }
+
+  @keyframes shimmer { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  .risk-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; margin-left: 8px; }
+  .risk-low { background: rgba(0,255,179,.12); color: var(--green); }
+  .risk-mid { background: rgba(245,197,66,.12); color: var(--yellow); }
+  .risk-high { background: rgba(255,77,109,.12); color: var(--red); }
+
+  .recent-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .recent-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+
+  .recent-item:hover { border-color: var(--accent); background: rgba(131,110,249,0.06); }
+  .ri-left { display: flex; align-items: center; gap: 10px; }
+  .ri-icon { width: 34px; height: 34px; border-radius: 50%; display:flex;align-items:center;justify-content:center; font-size:.9rem;font-weight:800; }
+  .ri-name { font-size: .88rem; font-weight: 700; }
+  .ri-addr { font-size: .68rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .ri-price { font-size: .9rem; font-weight: 700; text-align: right; }
+  .ri-change { font-size: .72rem; text-align: right; font-weight: 600; }
+
+  /* ---- PAGE 2: PRICES ---- */
+  .prices-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+  .page-heading { font-size: 1.8rem; font-weight: 800; }
+  .page-heading span { color: var(--accent); }
+
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .filter-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .filter-chip.active, .filter-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(131,110,249,0.08); }
+
+  .prices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+
+  .price-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.2rem;
+    transition: all .2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .price-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 32px var(--glow); }
+
+  .pc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .pc-icon { width: 40px; height: 40px; border-radius: 50%; display:flex;align-items:center;justify-content:center; font-size:1rem;font-weight:800; }
+  .pc-name { font-size: 1rem; font-weight: 800; }
+  .pc-ticker { font-size: .72rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .pc-price { font-size: 1.5rem; font-weight: 800; margin-bottom: 2px; }
+  .pc-change { font-size: .82rem; font-weight: 700; }
+
+  .pc-stats { display: flex; gap: 8px; margin-top: .8rem; border-top: 1px solid var(--border); padding-top: .8rem; flex-wrap: wrap; }
+  .pc-stat { flex: 1; }
+  .pc-stat .lbl { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .pc-stat .val { font-size: .82rem; font-weight: 600; margin-top: 2px; }
+
+  .sparkline { width: 100%; height: 40px; margin-top: .5rem; }
+
+  /* ---- PAGE 3: WALLET ---- */
+  .wallet-input-area { margin-bottom: 2rem; }
+
+  .wallet-result { background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; animation: fadeUp .3s ease; }
+
+  .wallet-header {
+    background: linear-gradient(135deg, rgba(131,110,249,0.15), rgba(0,0,0,0));
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .wallet-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .wallet-addr-full { font-family: 'Space Mono', monospace; font-size: .78rem; color: var(--muted); word-break: break-all; margin-top: 4px; }
+  .wallet-name { font-size: 1.1rem; font-weight: 800; }
+
+  .wallet-net-worth { margin-left: auto; text-align: right; }
+  .wnw-label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .wnw-val { font-size: 1.6rem; font-weight: 800; }
+
+  .wallet-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .w-tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; transition: all .2s; }
+  .w-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .wallet-body { padding: 1.5rem; }
+  .holdings-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .holding-item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; transition: border-color .2s; }
+  .holding-item:hover { border-color: var(--accent); }
+  .h-icon { width: 38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;flex-shrink:0; }
+  .h-info { flex: 1; min-width: 0; }
+  .h-name { font-size: .9rem; font-weight: 700; }
+  .h-bal { font-size: .75rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .h-right { text-align: right; flex-shrink: 0; }
+  .h-usd { font-size: .95rem; font-weight: 700; }
+  .h-pct { font-size: .72rem; font-weight: 600; margin-top: 2px; }
+
+  .tx-list { display: flex; flex-direction: column; gap: 8px; }
+  .tx-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .tx-type-icon { width: 34px; height: 34px; border-radius: 10px; display:flex;align-items:center;justify-content:center; font-size:.85rem; flex-shrink:0; }
+  .tx-type-icon.send { background: rgba(255,77,109,.12); }
+  .tx-type-icon.recv { background: rgba(0,255,179,.12); }
+  .tx-type-icon.swap { background: rgba(131,110,249,.12); }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name { font-size: .85rem; font-weight: 700; }
+  .tx-hash { font-size: .68rem; color: var(--muted); font-family: 'Space Mono', monospace; cursor:pointer; }
+  .tx-hash:hover { color: var(--accent); }
+  .tx-right { text-align: right; flex-shrink: 0; min-width: 80px; }
+  .tx-val { font-size: .88rem; font-weight: 700; }
+  .tx-time { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+
+  .w-panel { display: none; }
+  .w-panel.active { display: block; animation: fadeUp .2s ease; }
+
+  /* Helpers */
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .neu { color: var(--muted); }
+
+  .toast {
+    position: fixed;
+    bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--card);
+    border: 1px solid var(--accent);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: .82rem;
+    opacity: 0;
+    transition: all .3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state .es-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .4; }
+  .empty-state p { font-size: .9rem; }
+
+  /* ---- API KEY PANEL ---- */
+  .api-key-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .api-key-panel:hover { border-color: rgba(131,110,249,0.4); }
+  .api-key-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .api-key-label { font-size: .75rem; font-weight: 700; color: var(--muted); letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
+  .api-key-toggle { font-size: .72rem; color: var(--accent); font-family: 'Space Mono', monospace; }
+  .api-key-body { padding: 0 14px 14px; }
+  .api-key-hint { font-size: .75rem; color: var(--muted); line-height: 1.5; margin-bottom: .2rem; }
+  .api-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .api-status-dot.set { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .api-status-dot.unset { background: var(--yellow); }
+
+  /* ---- WALLET NFT GRID ---- */
+  .nft-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+  .nft-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color .2s; }
+  .nft-card:hover { border-color: var(--accent); }
+  .nft-art { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+  .nft-name { padding: 8px 10px; font-size: .75rem; font-weight: 700; }
+  .nft-meta { padding: 0 10px 8px; font-size: .68rem; color: var(--muted); }
+
+  /* ---- WALLET LOADING ---- */
+  .w-skeleton { height: 14px; background: var(--border); border-radius: 4px; animation: shimmer 1.5s infinite; margin: 4px 0; }
+
+
+    .search-row { flex-direction: column; }
+    .search-btn { width: 100%; }
+    .ca-stats { grid-template-columns: repeat(2, 1fr); }
+    .prices-grid { grid-template-columns: 1fr; }
+    .prices-header { flex-direction: column; align-items: flex-start; }
+    .page-heading { font-size: 1.3rem; }
+    .wallet-net-worth { margin-left: 0; width: 100%; border-top: 1px solid var(--border); padding-top: 10px; }
+    .wnw-val { font-size: 1.3rem; }
+    .filter-row { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    10kScope
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPage('tracker', this)">CA Tracker</button>
+    <button class="nav-tab" onclick="switchPage('prices', this)">Prices</button>
+    <button class="nav-tab" onclick="switchPage('wallet', this)">Wallet</button>
+  </div>
+  <div class="nav-right">
+    <div class="network-badge"><div class="net-dot"></div>Monad</div>
+    <button class="connect-btn" onclick="connectWallet()">Connect Wallet</button>
+    <button class="hamburger" onclick="toggleMenu()">☰</button>
+  </div>
+</nav>
+
+<!-- Mobile drawer -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="nav-tab active" onclick="switchPage('tracker', this); toggleMenu()">CA Tracker</button>
+  <button class="nav-tab" onclick="switchPage('prices', this); toggleMenu()">Prices</button>
+  <button class="nav-tab" onclick="switchPage('wallet', this); toggleMenu()">Wallet</button>
+</div>
+
+<!-- ===== PAGE 1: CA TRACKER ===== -->
+<div class="page active" id="page-tracker">
+  <div class="search-area">
+    <div class="search-label">Enter Contract Address</div>
+    <div class="search-row">
+      <input class="ca-input" id="caInput" placeholder="0x... paste Monad contract address" maxlength="42"/>
+      <button class="search-btn" onclick="lookupCA()">Analyze ✦</button>
+    </div>
+  </div>
+  <div id="caResult"></div>
+  <div class="section-title">Recently Tracked</div>
+  <div class="recent-list" id="recentList"></div>
+</div>
+
+<!-- ===== PAGE 2: PRICES ===== -->
+<div class="page" id="page-prices">
+  <div class="prices-header">
+    <div>
+      <div class="page-heading">Monad <span>Ecosystem</span></div>
+      <div style="font-size:.8rem;color:var(--muted);margin-top:4px">Live prices · Updated every 30s</div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-chip active" onclick="filterCoins('all',this)">All</button>
+      <button class="filter-chip" onclick="filterCoins('defi',this)">DeFi</button>
+      <button class="filter-chip" onclick="filterCoins('nft',this)">NFT</button>
+      <button class="filter-chip" onclick="filterCoins('gaming',this)">Gaming</button>
+    </div>
+  </div>
+  <div class="prices-grid" id="pricesGrid"></div>
+</div>
+
+<!-- ===== PAGE 3: WALLET ===== -->
+<div class="page" id="page-wallet">
+  <div class="wallet-input-area">
+    <div class="search-label">Wallet Address</div>
+    <div class="search-row">
+      <input class="ca-input" id="walletInput" placeholder="0x... enter any Monad wallet address"/>
+      <button class="search-btn" onclick="lookupWallet()">Lookup ✦</button>
+    </div>
+  </div>
+
+  <!-- API Key Settings Panel -->
+  <div class="api-key-panel" id="apiKeyPanel">
+    <div class="api-key-header" onclick="toggleApiPanel()">
+      <span class="api-key-label">✦ MonadScan API Key <span id="apiKeyStatus" class="api-status-dot"></span></span>
+      <span class="api-key-toggle" id="apiKeyToggle">▸ Configure</span>
+    </div>
+    <div class="api-key-body" id="apiKeyBody" style="display:none">
+      <p class="api-key-hint">Transaction history &amp; token data requires a free <a href="https://etherscan.io/apis" target="_blank" style="color:var(--accent)">Etherscan API key</a>. Monad is supported via their V2 API (chain ID 143). Without a key, requests are rate-limited to 1/5s.</p>
+      <div class="search-row" style="margin-top:.6rem">
+        <input class="ca-input" id="etherscanKeyInput" placeholder="Paste your free Etherscan API key..." style="font-family:'Space Mono',monospace;font-size:.78rem"/>
+        <button class="search-btn" onclick="saveApiKey()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="walletResult">
+    <div class="empty-state">
+      <div class="es-icon">👛</div>
+      <p>Enter a wallet address to view live on-chain holdings, transactions &amp; NFTs</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== DATA ==========
+const COINS = [
+  { name:'Monad',ticker:'MON',price:2.84,change:4.2,mcap:'284M',vol:'18M',liq:'42M',category:'defi',color:'#836EF9',emoji:'🟣' },
+  { name:'MonaSwap',ticker:'MSWAP',price:0.0042,change:-1.8,mcap:'4.2M',vol:'820K',liq:'1.2M',category:'defi',color:'#00ffb3',emoji:'💱' },
+  { name:'MonadPunks',ticker:'MPUNK',price:0.18,change:12.4,mcap:'18M',vol:'3.1M',liq:'2.4M',category:'nft',color:'#ff6eb4',emoji:'👾' },
+  { name:'NadFi',ticker:'NADFI',price:0.0091,change:7.1,mcap:'9.1M',vol:'1.4M',liq:'880K',category:'defi',color:'#f5c542',emoji:'🏦' },
+  { name:'MonArena',ticker:'ARENA',price:0.031,change:-3.2,mcap:'3.1M',vol:'540K',liq:'320K',category:'gaming',color:'#ff7c4d',emoji:'⚔️' },
+  { name:'VelodNAD',ticker:'VNAD',price:0.00068,change:2.9,mcap:'680K',vol:'120K',liq:'95K',category:'defi',color:'#4dc8ff',emoji:'🌀' },
+  { name:'NadQuest',ticker:'NQUEST',price:0.0057,change:19.3,mcap:'5.7M',vol:'2.1M',liq:'1.5M',category:'gaming',color:'#a4ff72',emoji:'🗡️' },
+  { name:'MonBridge',ticker:'MBRDG',price:0.044,change:0.8,mcap:'4.4M',vol:'310K',liq:'560K',category:'defi',color:'#c884ff',emoji:'🌉' },
+];
+
+const MOCK_TOKENS = [
+  { name:'Monad',ticker:'MON',addr:'0x836ef9...00dead',price:'$2.84',change:'+4.2%',color:'#836EF9',emoji:'🟣',supply:'100M',holders:'24,881',liquidity:'$42M',risk:'low',
+    ai:`MON is the native gas token of the Monad L1 blockchain — a high-throughput EVM-compatible chain. The token shows healthy liquidity with a strong holder base. On-chain activity suggests significant DeFi adoption. No honeypot indicators detected. Audit status: passed (CertiK). Overall risk profile is low — suitable for portfolio exposure.` },
+  { name:'NadFi',ticker:'NADFI',addr:'0xnadfi1...88cafe',price:'$0.0091',change:'+7.1%',color:'#f5c542',emoji:'🏦',supply:'1B',holders:'3,210',liquidity:'$880K',risk:'mid',
+    ai:`NADFI is a yield-aggregator protocol deployed on Monad. Liquidity is moderate — watch for slippage on larger trades. Holder distribution shows 3 wallets holding >12% each, which presents concentration risk. Smart contract has been live 45 days with no major incidents. Medium risk — DYOR before large positions.` },
+  { name:'MonArena',ticker:'ARENA',addr:'0xarena0...ff1234',price:'$0.031',change:'-3.2%',color:'#ff7c4d',emoji:'⚔️',supply:'500M',holders:'1,044',liquidity:'$320K',risk:'high',
+    ai:`ARENA is a gaming token with low liquidity relative to market cap. Holder base is thin and recent sell pressure from top wallets detected. No formal audit on file. The contract has a mutable ownership function — flag for potential rug risk. High risk — speculative only, small position sizing recommended.` },
+];
+
+const RECENT_TRACKED = MOCK_TOKENS.slice(0,3).map(t => ({...t}));
+
+// ========== PAGES ==========
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ========== MENU ==========
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== WALLET CONNECT ==========
+function connectWallet() {
+  showToast('🔗 Wallet connection — integrate MetaMask/WalletConnect here');
+}
+
+// ========== CA TRACKER ==========
+async function lookupCA() {
+  const val = document.getElementById('caInput').value.trim();
+  if (!val) { showToast('⚠️ Please enter a contract address'); return; }
+
+  document.getElementById('caResult').innerHTML = `
+    <div class="ca-result-card" style="text-align:center;padding:2.5rem">
+      <div style="font-size:1.8rem;animation:pulse 1.5s infinite">⬡</div>
+      <div style="color:var(--muted);margin-top:.8rem;font-size:.85rem">Fetching token data...</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + val);
+    const data = await res.json();
+    const pairs = data.pairs;
+
+    if (!pairs || pairs.length === 0) {
+      document.getElementById('caResult').innerHTML = `
+        <div class="ca-result-card" style="text-align:center;padding:2rem">
+          <div style="font-size:1.5rem">🔍</div>
+          <div style="color:var(--muted);margin-top:.8rem;font-size:.85rem">No pairs found for this address.<br>It may not be listed on any DEX yet.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const best = pairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+    const change = parseFloat(best.priceChange?.h24 || 0);
+    const price = parseFloat(best.priceUsd || 0);
+    const priceStr = price === 0 ? 'N/A'
+      : price < 0.000001 ? '$' + price.toExponential(2)
+      : price < 0.01 ? '$' + price.toFixed(6)
+      : price < 1 ? '$' + price.toFixed(4)
+      : '$' + price.toFixed(2);
+
+    const token = {
+      name: best.baseToken.name,
+      ticker: best.baseToken.symbol,
+      addr: val.slice(0, 8) + '...' + val.slice(-6),
+      addrFull: val,
+      price: priceStr,
+      change: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
+      liquidity: formatNum(best.liquidity?.usd),
+      holders: 'See Explorer',
+      supply: formatNum(best.fdv),
+      color: '#836EF9',
+      emoji: best.baseToken.symbol.slice(0, 2),
+      risk: Math.abs(change) > 30 ? 'high' : Math.abs(change) > 10 ? 'mid' : 'low',
+      dexUrl: best.url,
+      ai: buildAIText(best),
+    };
+
+    renderCAResult(token);
+
+    if (!RECENT_TRACKED.find(t => t.name === token.name)) {
+      RECENT_TRACKED.unshift(token);
+      if (RECENT_TRACKED.length > 5) RECENT_TRACKED.pop();
+      renderRecent();
+    }
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('caResult').innerHTML = `
+      <div class="ca-result-card" style="text-align:center;padding:2rem">
+        <div style="color:var(--red)">⚠️ Failed to fetch. Check address or connection.</div>
+      </div>
+    `;
+  }
+}
+
+function buildAIText(pair) {
+  const change = parseFloat(pair.priceChange?.h24 || 0);
+  const liq = parseFloat(pair.liquidity?.usd || 0);
+  const vol = parseFloat(pair.volume?.h24 || 0);
+  const name = pair.baseToken.name;
+  const sym = pair.baseToken.symbol;
+  const dex = pair.dexId || 'a DEX';
+  const age = pair.pairCreatedAt
+    ? Math.floor((Date.now() - pair.pairCreatedAt) / 86400000) + ' days old'
+    : 'age unknown';
+
+  let riskNote = 'Liquidity appears healthy relative to volume.';
+  if (liq < 10000) riskNote = 'Liquidity is very low — high slippage and rug risk possible.';
+  else if (liq < 100000) riskNote = 'Moderate liquidity — use caution on larger trades.';
+
+  return name + ' ($' + sym + ') is trading on ' + dex + ', pair is ' + age + '. ' +
+    'Price is ' + (change >= 0 ? 'up' : 'down') + ' ' + Math.abs(change).toFixed(1) + '% in the last 24h with $' + (vol/1000).toFixed(0) + 'K in volume. ' +
+    'Liquidity stands at ' + formatNum(liq) + '. ' + riskNote + ' ' +
+    (Math.abs(change) > 50 ? '⚠️ Extreme price movement detected — be cautious. ' : '') +
+    'Always verify contract ownership and audit status before investing.';
+}
+
+function renderCAResult(token) {
+  const riskClass = token.risk === 'low' ? 'risk-low' : token.risk === 'mid' ? 'risk-mid' : 'risk-high';
+  const riskLabel = token.risk === 'low' ? '✓ Low Risk' : token.risk === 'mid' ? '⚠ Medium Risk' : '🔴 High Risk';
+  const changeClass = parseFloat(token.change) >= 0 ? 'pos' : 'neg';
+
+  document.getElementById('caResult').innerHTML = `
+    <div class="ca-result-card">
+      <div class="ca-top">
+        <div class="token-icon" style="background:${token.color}22;color:${token.color}">${token.emoji}</div>
+        <div class="token-info">
+          <h2>${token.name} <span class="risk-badge ${riskClass}">${riskLabel}</span></h2>
+          <div class="ticker">$${token.ticker}</div>
+          <div class="token-addr" onclick="copyAddr('${token.addr}')">${token.addr} 📋</div>
+        </div>
+      </div>
+      <div class="ca-stats">
+        <div class="stat-box"><div class="s-label">Price</div><div class="s-val">${token.price}</div></div>
+        <div class="stat-box"><div class="s-label">24h Change</div><div class="s-val ${changeClass}">${token.change}</div></div>
+        <div class="stat-box"><div class="s-label">Liquidity</div><div class="s-val">${token.liquidity}</div></div>
+        <div class="stat-box"><div class="s-label">Holders</div><div class="s-val">${token.holders}</div></div>
+        <div class="stat-box"><div class="s-label">Supply</div><div class="s-val">${token.supply}</div></div>
+      </div>
+      <div class="ai-preview">
+        <div class="ai-badge">AI Analysis</div>
+        <div class="ai-text" id="aiTextArea"><span class="loading">Generating analysis...</span></div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    const el = document.getElementById('aiTextArea');
+    if (el) { el.innerHTML = ''; el.classList.remove('loading'); typeText(el, token.ai, 18); }
+  }, 900);
+}
+
+function typeText(el, text, delay) {
+  let i = 0;
+  function next() {
+    if (i < text.length) { el.textContent += text[i++]; setTimeout(next, delay); }
+  }
+  next();
+}
+
+function copyAddr(addr) {
+  navigator.clipboard?.writeText(addr);
+  showToast('📋 Address copied!');
+}
+
+// ========== RECENT LIST ==========
+function renderRecent() {
+  const list = document.getElementById('recentList');
+  list.innerHTML = RECENT_TRACKED.map(t => {
+    const changeClass = parseFloat(t.change) >= 0 ? 'pos' : 'neg';
+    return `
+      <div class="recent-item" onclick="loadRecent('${t.name}')">
+        <div class="ri-left">
+          <div class="ri-icon" style="background:${t.color}22;color:${t.color}">${t.emoji}</div>
+          <div>
+            <div class="ri-name">${t.name} <span style="font-size:.72rem;color:var(--muted)">$${t.ticker}</span></div>
+            <div class="ri-addr">${t.addr}</div>
+          </div>
+        </div>
+        <div>
+          <div class="ri-price">${t.price}</div>
+          <div class="ri-change ${changeClass}">${t.change}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadRecent(name) {
+  const token = MOCK_TOKENS.find(t => t.name === name);
+  if (token) renderCAResult(token);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ========== PRICES ==========
+let allFetchedPairs = [];
+
+const MONAD_PAIRS = [
+  '0x9a5B9E78FEdEcdbFe89e4d41Bd44eDCFBD5E4E4a',
+  '0x116e7d070f1888b81e1e0324f56d6746b2d7d8f1',
+  '0x212fde77a42d55f980d0a0304e7eebe1e999c60f',
+  '0x5a73f1ff9cad2dfa768ac681b6a74f6a60a4c62b',
+];
+
+async function fetchAndRenderPrices() {
+  const grid = document.getElementById('pricesGrid');
+  grid.innerHTML = `<div style="color:var(--muted);padding:2rem;grid-column:1/-1;text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:.5rem;animation:pulse 1.5s infinite">⬡</div>
+    Loading Monad ecosystem prices...
+  </div>`;
+
+  try {
+    const pairsUrl = `https://api.dexscreener.com/latest/dex/pairs/monad/${MONAD_PAIRS.join(',')}`;
+    const r1 = await fetch(pairsUrl);
+    const d1 = await r1.json();
+    let pairs = (d1.pairs || []).filter(p => p && p.priceUsd);
+
+    const searches = ['CHOG monad', 'YAKI monad', 'MON USDC monad', 'shMON', 'DAK monad'];
+    const searchResults = await Promise.all(
+      searches.map(q =>
+        fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(q)}`)
+          .then(r => r.json())
+          .catch(() => ({ pairs: [] }))
+      )
+    );
+
+    const seen = new Set();
+    for (const result of searchResults) {
+      for (const p of (result.pairs || [])) {
+        if (p.chainId !== 'monad') continue;
+        const key = p.baseToken?.address?.toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        pairs.push(p);
+      }
+    }
+
+    const finalPairs = [];
+    const finalSeen = new Set();
+    for (const p of pairs) {
+      const key = p.baseToken?.address?.toLowerCase();
+      if (!key || finalSeen.has(key)) continue;
+      finalSeen.add(key);
+      finalPairs.push(p);
+    }
+
+    allFetchedPairs = finalPairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+
+    if (allFetchedPairs.length === 0) {
+      renderPrices('all');
+      return;
+    }
+
+    renderPricesFromData(allFetchedPairs);
+  } catch (err) {
+    console.error(err);
+    renderPrices('all');
+  }
+}
+
+function renderPricesFromData(pairs) {
+  const grid = document.getElementById('pricesGrid');
+  if (!pairs || pairs.length === 0) { renderPrices('all'); return; }
+
+  grid.innerHTML = pairs.map(p => {
+    const change = parseFloat(p.priceChange?.h24 || 0);
+    const changeClass = change >= 0 ? 'pos' : 'neg';
+    const changeSign = change >= 0 ? '+' : '';
+    const price = parseFloat(p.priceUsd || 0);
+    const priceStr = price === 0 ? 'N/A'
+      : price < 0.000001 ? '$' + price.toExponential(2)
+      : price < 0.01 ? '$' + price.toFixed(6)
+      : price < 1 ? '$' + price.toFixed(4)
+      : '$' + price.toFixed(2);
+    const sparks = generateSparks(change);
+    const sym = p.baseToken?.symbol || '??';
+    const colors = ['#836EF9','#00ffb3','#f5c542','#ff6eb4','#4dc8ff','#a4ff72','#ff7c4d','#c884ff'];
+    const col = colors[Math.abs((sym.charCodeAt(0)||0) + (sym.charCodeAt(1)||0)) % colors.length];
+
+    return `
+      <div class="price-card" onclick="window.open('${p.url || '#'}','_blank')">
+        <div class="pc-top">
+          <div class="pc-icon" style="background:${col}22;color:${col}">${sym.slice(0,2)}</div>
+          <div>
+            <div class="pc-name">${p.baseToken?.name || 'Unknown'}</div>
+            <div class="pc-ticker">$${sym}</div>
+          </div>
+        </div>
+        <div class="pc-price">${priceStr}</div>
+        <div class="pc-change ${changeClass}">${changeSign}${change.toFixed(2)}% (24h)</div>
+        <svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none">
+          <polyline points="${sparks}" fill="none" stroke="${change >= 0 ? 'var(--green)' : 'var(--red)'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="lbl">Mkt Cap</div><div class="val">${formatNum(p.marketCap)}</div></div>
+          <div class="pc-stat"><div class="lbl">Vol 24h</div><div class="val">${formatNum(p.volume?.h24)}</div></div>
+          <div class="pc-stat"><div class="lbl">Liquidity</div><div class="val">${formatNum(p.liquidity?.usd)}</div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function formatNum(n) {
+  if (!n || isNaN(n)) return 'N/A';
+  n = parseFloat(n);
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  return '$' + n.toFixed(2);
+}
+
+function renderPrices(filter = 'all') {
+  const coins = filter === 'all' ? COINS : COINS.filter(c => c.category === filter);
+  document.getElementById('pricesGrid').innerHTML = coins.map(c => {
+    const changeClass = c.change >= 0 ? 'pos' : 'neg';
+    const changeSign = c.change >= 0 ? '+' : '';
+    const sparks = generateSparks(c.change);
+    return `
+      <div class="price-card">
+        <div class="pc-top">
+          <div class="pc-icon" style="background:${c.color}22;color:${c.color}">${c.emoji}</div>
+          <div>
+            <div class="pc-name">${c.name}</div>
+            <div class="pc-ticker">$${c.ticker}</div>
+          </div>
+        </div>
+        <div class="pc-price">${c.price < 0.01 ? '$'+c.price.toFixed(6) : '$'+c.price.toFixed(c.price < 1 ? 4 : 2)}</div>
+        <div class="pc-change ${changeClass}">${changeSign}${c.change}% (24h)</div>
+        <svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none">
+          <polyline points="${sparks}" fill="none" stroke="${c.change >= 0 ? 'var(--green)' : 'var(--red)'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="lbl">Mkt Cap</div><div class="val">$${c.mcap}</div></div>
+          <div class="pc-stat"><div class="lbl">Volume</div><div class="val">$${c.vol}</div></div>
+          <div class="pc-stat"><div class="lbl">Liquidity</div><div class="val">$${c.liq}</div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function generateSparks(trend) {
+  const pts = [];
+  let y = 20;
+  for (let x = 0; x <= 120; x += 12) {
+    y += (Math.random() - (trend >= 0 ? 0.4 : 0.6)) * 8;
+    y = Math.max(4, Math.min(36, y));
+    pts.push(`${x},${y}`);
+  }
+  return pts.join(' ');
+}
+
+function filterCoins(cat, btn) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  if (allFetchedPairs.length > 0) renderPricesFromData(allFetchedPairs);
+  else renderPrices(cat);
+}
+
+// ========== WALLET — REAL ON-CHAIN INTEGRATION ==========
+
+// Config
+const MONAD_RPC      = 'https://monad-mainnet.drpc.org';
+const MONADSCAN_BASE = 'https://api.etherscan.io/v2/api';
+const MONAD_CHAIN_ID = 143;
+
+function getApiKey() {
+  return localStorage.getItem('etherscan_key') || 'YourApiKeyToken';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('etherscanKeyInput').value.trim();
+  if (!key) { showToast('⚠️ Enter an API key first'); return; }
+  localStorage.setItem('etherscan_key', key);
+  updateApiKeyStatus();
+  toggleApiPanel();
+  showToast('✓ API key saved');
+}
+
+function updateApiKeyStatus() {
+  const dot = document.getElementById('apiKeyStatus');
+  const stored = localStorage.getItem('etherscan_key');
+  if (dot) {
+    dot.className = 'api-status-dot ' + (stored ? 'set' : 'unset');
+  }
+  const input = document.getElementById('etherscanKeyInput');
+  if (input && stored) input.value = stored;
+}
+
+function toggleApiPanel() {
+  const body   = document.getElementById('apiKeyBody');
+  const toggle = document.getElementById('apiKeyToggle');
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display   = open ? 'block' : 'none';
+  toggle.textContent   = open ? '▾ Close' : '▸ Configure';
+}
+
+// ---- RPC helpers ----
+async function rpc(method, params = []) {
+  const r = await fetch(MONAD_RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message);
+  return j.result;
+}
+
+async function fetchNativeBalance(addr) {
+  const hex = await rpc('eth_getBalance', [addr, 'latest']);
+  return parseInt(hex || '0x0', 16) / 1e18;
+}
+
+async function fetchERC20Balance(tokenAddr, walletAddr, decimals = 18) {
+  const callData = '0x70a08231' + walletAddr.replace('0x','').padStart(64, '0');
+  const hex = await rpc('eth_call', [{ to: tokenAddr, data: callData }, 'latest']);
+  return parseInt(hex || '0x0', 16) / Math.pow(10, decimals);
+}
+
+// ---- MonadScan (Etherscan V2) helpers ----
+function monadScanUrl(params) {
+  const p = new URLSearchParams({ chainid: MONAD_CHAIN_ID, apikey: getApiKey(), ...params });
+  return `${MONADSCAN_BASE}?${p}`;
+}
+
+async function monadScanFetch(params) {
+  try {
+    const r = await fetch(monadScanUrl(params));
+    const j = await r.json();
+    return j.status === '1' ? j.result : [];
+  } catch { return []; }
+}
+
+async function fetchTxList(addr) {
+  return monadScanFetch({ module: 'account', action: 'txlist', address: addr, sort: 'desc', offset: 15, page: 1 });
+}
+
+async function fetchTokenTxs(addr) {
+  return monadScanFetch({ module: 'account', action: 'tokentx', address: addr, sort: 'desc', offset: 50, page: 1 });
+}
+
+async function fetchNFTTxs(addr) {
+  return monadScanFetch({ module: 'account', action: 'tokennfttx', address: addr, sort: 'desc', offset: 20, page: 1 });
+}
+
+// ---- Derive ERC-20 holdings from transfer events ----
+async function deriveHoldings(addr, tokenTxs) {
+  // Net balance per contract from transfer history
+  const tokenMap = {};
+  const addrLow  = addr.toLowerCase();
+
+  for (const tx of tokenTxs) {
+    const key = tx.contractAddress.toLowerCase();
+    if (!tokenMap[key]) {
+      tokenMap[key] = {
+        address:  tx.contractAddress,
+        name:     tx.tokenName || 'Unknown Token',
+        symbol:   tx.tokenSymbol || '???',
+        decimals: parseInt(tx.tokenDecimal) || 18,
+        netUnits: 0n
+      };
+    }
+    const amt = BigInt(tx.value || '0');
+    if (tx.to.toLowerCase() === addrLow)   tokenMap[key].netUnits += amt;
+    else if (tx.from.toLowerCase() === addrLow) tokenMap[key].netUnits -= amt;
+  }
+
+  // Keep tokens with positive net balance, up to 8
+  const candidates = Object.values(tokenMap)
+    .filter(t => t.netUnits > 0n)
+    .slice(0, 8);
+
+  // Confirm current on-chain balance via eth_call
+  await Promise.all(candidates.map(async t => {
+    try {
+      t.balance = await fetchERC20Balance(t.address, addr, t.decimals);
+    } catch {
+      t.balance = Number(t.netUnits) / Math.pow(10, t.decimals);
+    }
+  }));
+
+  return candidates.filter(t => t.balance > 0);
+}
+
+// ---- Get MON price from live DexScreener data ----
+function getTokenPrice(symbolOrAddr) {
+  if (!allFetchedPairs || !allFetchedPairs.length) return null;
+  const sym  = symbolOrAddr.toUpperCase();
+  const addr = symbolOrAddr.toLowerCase();
+  const pair = allFetchedPairs.find(p =>
+    p.baseToken?.symbol?.toUpperCase() === sym ||
+    p.baseToken?.address?.toLowerCase() === addr
+  );
+  return pair ? parseFloat(pair.priceUsd || 0) : null;
+}
+
+// ---- Format helpers ----
+function fmtBalance(n) {
+  if (n === 0) return '0';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+  return n < 1 ? n.toFixed(6) : n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
+function timeAgo(ts) {
+  const secs = Math.floor(Date.now() / 1000) - parseInt(ts);
+  if (secs < 60)   return secs + 's ago';
+  if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+  if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
+  return Math.floor(secs / 86400) + 'd ago';
+}
+
+function shortHash(h) {
+  return h ? h.slice(0, 6) + '...' + h.slice(-4) : '';
+}
+
+// ---- Token icon color from symbol ----
+const TOKEN_COLORS = ['#836EF9','#00ffb3','#f5c542','#ff6eb4','#4dc8ff','#a4ff72','#ff7c4d','#c884ff'];
+function tokenColor(sym) {
+  const sum = (sym || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return TOKEN_COLORS[sum % TOKEN_COLORS.length];
+}
+
+// ========== MAIN WALLET LOOKUP ==========
+async function lookupWallet() {
+  const addr = document.getElementById('walletInput').value.trim();
+  if (!addr) { showToast('⚠️ Enter a wallet address'); return; }
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) { showToast('⚠️ Invalid Monad address format'); return; }
+
+  document.getElementById('walletResult').innerHTML = `
+    <div class="ca-result-card" style="text-align:center;padding:2.5rem">
+      <div style="font-size:1.8rem;animation:pulse 1.5s infinite">⬡</div>
+      <div style="color:var(--muted);margin-top:.8rem;font-size:.85rem">Reading on-chain data...</div>
+      <div style="color:var(--muted);font-size:.72rem;margin-top:.4rem;font-family:'Space Mono',monospace">${addr.slice(0,10)}...${addr.slice(-8)}</div>
+    </div>`;
+
+  try {
+    // Parallel fetch — RPC + MonadScan
+    const [nativeBal, txList, tokenTxs, nftTxs] = await Promise.all([
+      fetchNativeBalance(addr),
+      fetchTxList(addr),
+      fetchTokenTxs(addr),
+      fetchNFTTxs(addr)
+    ]);
+
+    const holdings = await deriveHoldings(addr, tokenTxs);
+
+    // Calculate net worth
+    const monPrice  = getTokenPrice('MON') || 0;
+    let netWorth    = nativeBal * monPrice;
+    for (const h of holdings) {
+      const p = getTokenPrice(h.symbol) || getTokenPrice(h.address) || 0;
+      h.usdValue = h.balance * p;
+      h.price    = p;
+      netWorth  += h.usdValue;
+    }
+
+    renderWallet(addr, nativeBal, monPrice, holdings, txList, nftTxs, netWorth);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('walletResult').innerHTML = `
+      <div class="ca-result-card" style="text-align:center;padding:2rem">
+        <div style="font-size:1.3rem;margin-bottom:.5rem">⚠️</div>
+        <div style="color:var(--red);font-size:.85rem">Failed to fetch wallet data.</div>
+        <div style="color:var(--muted);font-size:.75rem;margin-top:.4rem">Check the address, your connection, or add a MonadScan API key above.</div>
+      </div>`;
+  }
+}
+
+function renderWallet(addr, nativeBal, monPrice, holdings, txList, nftTxs, netWorth) {
+  document.getElementById('walletResult').innerHTML = `
+    <div class="wallet-result">
+      <div class="wallet-header">
+        <div class="wallet-avatar">${addr.slice(2,4).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div class="wallet-name">Monad Wallet</div>
+          <div class="wallet-addr-full">${addr}</div>
+        </div>
+        <div class="wallet-net-worth">
+          <div class="wnw-label">Net Worth</div>
+          <div class="wnw-val">${netWorth > 0 ? '$' + netWorth.toLocaleString(undefined,{maximumFractionDigits:2}) : '—'}</div>
+        </div>
+      </div>
+      <div class="wallet-tabs">
+        <div class="w-tab active" onclick="switchWTab('holdings',this)">Holdings</div>
+        <div class="w-tab" onclick="switchWTab('txs',this)">Transactions</div>
+        <div class="w-tab" onclick="switchWTab('nfts',this)">NFTs</div>
+      </div>
+      <div class="wallet-body">
+        <div class="w-panel active" id="w-holdings">
+          <div class="holdings-list">${holdingsHTML(addr, nativeBal, monPrice, holdings)}</div>
+        </div>
+        <div class="w-panel" id="w-txs">
+          <div class="tx-list">${txsHTML(addr, txList)}</div>
+        </div>
+        <div class="w-panel" id="w-nfts">${nftsHTML(nftTxs)}</div>
+      </div>
+    </div>`;
+}
+
+function holdingsHTML(addr, nativeBal, monPrice, holdings) {
+  const rows = [];
+
+  // Native MON always first
+  const monUsd = nativeBal * monPrice;
+  rows.push(`
+    <div class="holding-item">
+      <div class="h-icon" style="background:#836EF922;color:#836EF9">MON</div>
+      <div class="h-info">
+        <div class="h-name">Monad</div>
+        <div class="h-bal">${fmtBalance(nativeBal)} MON</div>
+      </div>
+      <div class="h-right">
+        <div class="h-usd">${monUsd > 0 ? '$' + monUsd.toLocaleString(undefined,{maximumFractionDigits:2}) : '—'}</div>
+        <div class="h-pct" style="color:var(--muted);font-size:.68rem">Native gas token</div>
+      </div>
+    </div>`);
+
+  if (holdings.length === 0 && nativeBal === 0) {
+    return `<div style="text-align:center;color:var(--muted);padding:2rem;font-size:.85rem">No token holdings found.<br><span style="font-size:.72rem">Wallet may be empty or have no tracked transfers.</span></div>`;
+  }
+
+  for (const h of holdings) {
+    const col     = tokenColor(h.symbol);
+    const usdStr  = h.usdValue > 0 ? '$' + h.usdValue.toLocaleString(undefined,{maximumFractionDigits:2}) : '—';
+    const initials = h.symbol.slice(0, 3).toUpperCase();
+    rows.push(`
+      <div class="holding-item">
+        <div class="h-icon" style="background:${col}22;color:${col}">${initials}</div>
+        <div class="h-info">
+          <div class="h-name">${h.name}</div>
+          <div class="h-bal">${fmtBalance(h.balance)} ${h.symbol}</div>
+        </div>
+        <div class="h-right">
+          <div class="h-usd">${usdStr}</div>
+          <div class="h-pct" style="color:var(--muted);font-size:.68rem">${h.price > 0 ? '$' + h.price.toFixed(6) : 'Price N/A'}</div>
+        </div>
+      </div>`);
+  }
+
+  if (holdings.length === 0) {
+    rows.push(`<div style="text-align:center;color:var(--muted);padding:1rem;font-size:.75rem">No ERC-20 transfers found in history.<br>MON balance shown above.</div>`);
+  }
+
+  return rows.join('');
+}
+
+function txsHTML(addr, txList) {
+  if (!txList || txList.length === 0) {
+    return `<div style="text-align:center;color:var(--muted);padding:2rem;font-size:.85rem">
+      No transactions found.<br>
+      <span style="font-size:.72rem">Add a MonadScan API key above for full history.</span>
+    </div>`;
+  }
+
+  const addrLow = addr.toLowerCase();
+  return txList.map(tx => {
+    const isIn    = tx.to?.toLowerCase() === addrLow;
+    const type    = isIn ? 'recv' : 'send';
+    const icon    = isIn ? '↓' : '↑';
+    const label   = isIn
+      ? `Received from ${shortHash(tx.from)}`
+      : `Sent to ${shortHash(tx.to)}`;
+    const valMON  = (parseInt(tx.value || '0') / 1e18).toFixed(4);
+    const valStr  = valMON === '0.0000' ? 'Contract call' : (isIn ? '+' : '-') + valMON + ' MON';
+    const valClass = type === 'recv' ? 'pos' : type === 'send' ? 'neg' : 'neu';
+    const failed  = tx.isError === '1' ? ' <span style="color:var(--red);font-size:.65rem">FAILED</span>' : '';
+
+    return `
+      <div class="tx-item">
+        <div class="tx-type-icon ${type}">${icon}</div>
+        <div class="tx-info">
+          <div class="tx-name">${label}${failed}</div>
+          <div class="tx-hash" onclick="window.open('https://monadscan.com/tx/${tx.hash}','_blank')">${shortHash(tx.hash)}</div>
+        </div>
+        <div class="tx-right">
+          <div class="tx-val ${valClass}">${valStr}</div>
+          <div class="tx-time">${tx.timeStamp ? timeAgo(tx.timeStamp) : '—'}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function nftsHTML(nftTxs) {
+  if (!nftTxs || nftTxs.length === 0) {
+    return `<div style="text-align:center;color:var(--muted);padding:2rem;font-size:.85rem">
+      No NFT transfers found.<br>
+      <span style="font-size:.72rem">Add a MonadScan API key above to load NFT activity.</span>
+    </div>`;
+  }
+
+  // Deduplicate by tokenID + contract
+  const seen = new Set();
+  const unique = nftTxs.filter(tx => {
+    const key = tx.contractAddress + '_' + tx.tokenID;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 12);
+
+  const colors = ['#ff6eb4','#836EF9','#a4ff72','#f5c542','#4dc8ff','#ff7c4d'];
+  return `<div class="nft-grid">
+    ${unique.map((nft, i) => {
+      const col = colors[i % colors.length];
+      const name = nft.tokenName || 'Unknown NFT';
+      const id   = nft.tokenID ? '#' + nft.tokenID : '';
+      return `
+        <div class="nft-card" onclick="window.open('https://monadscan.com/token/${nft.contractAddress}?a=${nft.tokenID}','_blank')">
+          <div class="nft-art" style="background:${col}22">👾</div>
+          <div class="nft-name">${name} ${id}</div>
+          <div class="nft-meta">${shortHash(nft.contractAddress)}</div>
+        </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function switchWTab(tab, el) {
+  document.querySelectorAll('.w-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.w-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('w-' + tab).classList.add('active');
+}
+
+// ========== INIT ==========
+renderRecent();
+fetchAndRenderPrices();
+setInterval(fetchAndRenderPrices, 30000);
+updateApiKeyStatus();
+
+setInterval(() => {
+  const cards = document.querySelectorAll('.pc-price');
+  if (cards.length === 0) return;
+  const idx = Math.floor(Math.random() * cards.length);
+  cards[idx].style.color = 'var(--accent)';
+  setTimeout(() => cards[idx].style.color = '', 400);
+}, 3000);
+</script>
+</body>
+</html>
