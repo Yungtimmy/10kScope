@@ -653,12 +653,123 @@ function showToast(msg) {
 }
 
 // ========== WALLET CONNECT ==========
-function connectWallet() {
-  showToast('🔗 Wallet connection — integrate MetaMask/WalletConnect here');
+const MONAD_CHAIN = {
+  chainId:         '0x279F',          // 10143 decimal — Monad testnet
+  chainName:       'Monad Testnet',
+  nativeCurrency:  { name: 'Monad', symbol: 'MON', decimals: 18 },
+  rpcUrls:         ['https://testnet-rpc.monad.xyz'],
+  blockExplorerUrls:['https://monadscan.com'],
+};
+
+let connectedAddress = null;
+
+async function connectWallet() {
+  const btn = document.querySelector('.connect-btn');
+
+  // Already connected — disconnect
+  if (connectedAddress) {
+    connectedAddress = null;
+    btn.textContent = 'Connect Wallet';
+    btn.style.background = 'linear-gradient(135deg, var(--accent), #5b45c8)';
+    showToast('👋 Wallet disconnected');
+    return;
+  }
+
+  // No MetaMask
+  if (!window.ethereum) {
+    showToast('🦊 MetaMask not found — install it first');
+    window.open('https://metamask.io/download/', '_blank');
+    return;
+  }
+
+  try {
+    btn.textContent = 'Connecting...';
+    btn.disabled = true;
+
+    // Request accounts
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts || accounts.length === 0) throw new Error('No accounts returned');
+    connectedAddress = accounts[0];
+
+    // Check / switch chain
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (chainId !== MONAD_CHAIN.chainId) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: MONAD_CHAIN.chainId }],
+        });
+      } catch (switchErr) {
+        // Chain not added yet — add it
+        if (switchErr.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [MONAD_CHAIN],
+          });
+        } else {
+          throw switchErr;
+        }
+      }
+    }
+
+    // Update button
+    const short = connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4);
+    btn.textContent = '✓ ' + short;
+    btn.style.background = 'linear-gradient(135deg, #00c48c, #007a58)';
+    btn.disabled = false;
+
+    showToast('✅ Connected: ' + short);
+
+    // Auto-fill wallet page input & run lookup
+    const walletInput = document.getElementById('walletInput');
+    if (walletInput) {
+      walletInput.value = connectedAddress;
+      // Switch to wallet tab and auto-lookup
+      const walletTabDesktop = document.querySelector('.nav-tabs .nav-tab:nth-child(3)');
+      const walletTabMobile  = document.querySelector('.mobile-menu .nav-tab:nth-child(3)');
+      switchPage('wallet', walletTabDesktop || walletTabMobile);
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      if (walletTabDesktop) walletTabDesktop.classList.add('active');
+      lookupWallet();
+    }
+
+    // Listen for account/chain changes
+    window.ethereum.on('accountsChanged', (accs) => {
+      if (!accs.length) {
+        connectedAddress = null;
+        btn.textContent = 'Connect Wallet';
+        btn.style.background = 'linear-gradient(135deg, var(--accent), #5b45c8)';
+        showToast('👋 Wallet disconnected');
+      } else {
+        connectedAddress = accs[0];
+        const s = connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);
+        btn.textContent = '✓ ' + s;
+        document.getElementById('walletInput').value = connectedAddress;
+        showToast('🔄 Account switched: ' + s);
+        lookupWallet();
+      }
+    });
+
+    window.ethereum.on('chainChanged', () => {
+      showToast('⛓️ Network changed — reloading...');
+      setTimeout(() => location.reload(), 800);
+    });
+
+  } catch (err) {
+    connectedAddress = null;
+    btn.textContent = 'Connect Wallet';
+    btn.style.background = 'linear-gradient(135deg, var(--accent), #5b45c8)';
+    btn.disabled = false;
+    if (err.code === 4001) {
+      showToast('❌ Connection rejected');
+    } else {
+      showToast('⚠️ ' + (err.message || 'Connection failed'));
+    }
+  }
 }
 
 // ========== CA TRACKER ==========
-async function lookupCA() {
+async function lookupCA() { /* upgraded: real Claude AI analysis via /api/analyze */
   const val = document.getElementById('caInput').value.trim();
   if (!val) { showToast('⚠️ Please enter a contract address'); return; }
 
@@ -707,7 +818,6 @@ async function lookupCA() {
       emoji: best.baseToken.symbol.slice(0, 2),
       risk: Math.abs(change) > 30 ? 'high' : Math.abs(change) > 10 ? 'mid' : 'low',
       dexUrl: best.url,
-      ai: buildAIText(best),
     };
 
     renderCAResult(token);
@@ -716,6 +826,19 @@ async function lookupCA() {
       RECENT_TRACKED.unshift(token);
       if (RECENT_TRACKED.length > 5) RECENT_TRACKED.pop();
       renderRecent();
+    }
+
+    // Real AI analysis from Claude
+    try {
+      const aiText = await fetchAIAnalysis(best, pairs.length);
+      const el = document.getElementById('aiTextArea');
+      if (el) { el.innerHTML = ''; el.classList.remove('loading'); typeText(el, aiText, 14); }
+    } catch (aiErr) {
+      const el = document.getElementById('aiTextArea');
+      if (el) {
+        el.classList.remove('loading');
+        el.innerHTML = '<span style="color:var(--muted);font-size:.8rem">⚠️ AI analysis unavailable — set ANTHROPIC_API_KEY in Vercel env vars.</span>';
+      }
     }
 
   } catch (err) {
@@ -728,26 +851,38 @@ async function lookupCA() {
   }
 }
 
-function buildAIText(pair) {
-  const change = parseFloat(pair.priceChange?.h24 || 0);
-  const liq = parseFloat(pair.liquidity?.usd || 0);
-  const vol = parseFloat(pair.volume?.h24 || 0);
-  const name = pair.baseToken.name;
-  const sym = pair.baseToken.symbol;
-  const dex = pair.dexId || 'a DEX';
-  const age = pair.pairCreatedAt
-    ? Math.floor((Date.now() - pair.pairCreatedAt) / 86400000) + ' days old'
-    : 'age unknown';
+async function fetchAIAnalysis(pair, pairCount) {
+  const tokenData = {
+    name:         pair.baseToken.name,
+    symbol:       pair.baseToken.symbol,
+    address:      pair.baseToken.address,
+    priceUsd:     pair.priceUsd,
+    priceChange:  pair.priceChange,
+    liquidity:    pair.liquidity,
+    volume:       pair.volume,
+    fdv:          pair.fdv,
+    marketCap:    pair.marketCap,
+    pairCreatedAt:pair.pairCreatedAt,
+    dexId:        pair.dexId,
+    chainId:      pair.chainId,
+    pairAddress:  pair.pairAddress,
+    txns:         pair.txns,
+    pairCount,
+  };
 
-  let riskNote = 'Liquidity appears healthy relative to volume.';
-  if (liq < 10000) riskNote = 'Liquidity is very low — high slippage and rug risk possible.';
-  else if (liq < 100000) riskNote = 'Moderate liquidity — use caution on larger trades.';
+  const res = await fetch('/api/analyze', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ tokenData }),
+  });
 
-  return name + ' ($' + sym + ') is trading on ' + dex + ', pair is ' + age + '. ' +
-    'Price is ' + (change >= 0 ? 'up' : 'down') + ' ' + Math.abs(change).toFixed(1) + '% in the last 24h with $' + (vol/1000).toFixed(0) + 'K in volume. ' +
-    'Liquidity stands at ' + formatNum(liq) + '. ' + riskNote + ' ' +
-    (Math.abs(change) > 50 ? '⚠️ Extreme price movement detected — be cautious. ' : '') +
-    'Always verify contract ownership and audit status before investing.';
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'AI analysis failed');
+  }
+
+  const data = await res.json();
+  return data.analysis || 'No analysis returned.';
 }
 
 function renderCAResult(token) {
@@ -781,8 +916,8 @@ function renderCAResult(token) {
 
   setTimeout(() => {
     const el = document.getElementById('aiTextArea');
-    if (el) { el.innerHTML = ''; el.classList.remove('loading'); typeText(el, token.ai, 18); }
-  }, 900);
+    if (el) { el.innerHTML = '<span style="color:var(--muted);font-size:.82rem;animation:shimmer 1.5s infinite">✦ Analyzing with Claude AI...</span>'; }
+  }, 100);
 }
 
 function typeText(el, text, delay) {
