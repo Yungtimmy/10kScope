@@ -504,32 +504,6 @@
   .empty-state .es-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .4; }
   .empty-state p { font-size: .9rem; }
 
-  /* ---- API KEY PANEL ---- */
-  .api-key-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 1.5rem;
-    overflow: hidden;
-    transition: border-color .2s;
-  }
-  .api-key-panel:hover { border-color: rgba(131,110,249,0.4); }
-  .api-key-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .api-key-label { font-size: .75rem; font-weight: 700; color: var(--muted); letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
-  .api-key-toggle { font-size: .72rem; color: var(--accent); font-family: 'Space Mono', monospace; }
-  .api-key-body { padding: 0 14px 14px; }
-  .api-key-hint { font-size: .75rem; color: var(--muted); line-height: 1.5; margin-bottom: .2rem; }
-  .api-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-  .api-status-dot.set { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .api-status-dot.unset { background: var(--yellow); }
-
   /* ---- WALLET NFT GRID ---- */
   .nft-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
   .nft-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color .2s; }
@@ -619,21 +593,6 @@
     <div class="search-row">
       <input class="ca-input" id="walletInput" placeholder="0x... enter any Monad wallet address"/>
       <button class="search-btn" onclick="lookupWallet()">Lookup ✦</button>
-    </div>
-  </div>
-
-  <!-- API Key Settings Panel -->
-  <div class="api-key-panel" id="apiKeyPanel">
-    <div class="api-key-header" onclick="toggleApiPanel()">
-      <span class="api-key-label">✦ MonadScan API Key <span id="apiKeyStatus" class="api-status-dot"></span></span>
-      <span class="api-key-toggle" id="apiKeyToggle">▸ Configure</span>
-    </div>
-    <div class="api-key-body" id="apiKeyBody" style="display:none">
-      <p class="api-key-hint">Transaction history &amp; token data requires a free <a href="https://etherscan.io/apis" target="_blank" style="color:var(--accent)">Etherscan API key</a>. Monad is supported via their V2 API (chain ID 143). Without a key, requests are rate-limited to 1/5s.</p>
-      <div class="search-row" style="margin-top:.6rem">
-        <input class="ca-input" id="etherscanKeyInput" placeholder="Paste your free Etherscan API key..." style="font-family:'Space Mono',monospace;font-size:.78rem"/>
-        <button class="search-btn" onclick="saveApiKey()">Save</button>
-      </div>
     </div>
   </div>
 
@@ -1037,43 +996,21 @@ function filterCoins(cat, btn) {
 // ========== WALLET — REAL ON-CHAIN INTEGRATION ==========
 
 // Config
-const MONAD_RPC      = 'https://monad-mainnet.drpc.org';
-const MONADSCAN_BASE = 'https://api.etherscan.io/v2/api';
-const MONAD_CHAIN_ID = 143;
+const MONAD_RPC    = 'https://monad-mainnet.drpc.org';
+const WALLET_PROXY = '/api/wallet';   // Vercel serverless function
 
-function getApiKey() {
-  return localStorage.getItem('etherscan_key') || 'YourApiKeyToken';
+// ---- MonadScan via Vercel proxy ----
+async function monadScanFetch(action, address) {
+  try {
+    const r = await fetch(`${WALLET_PROXY}?action=${action}&address=${address}`);
+    const j = await r.json();
+    return j.status === '1' ? j.result : [];
+  } catch { return []; }
 }
 
-function saveApiKey() {
-  const key = document.getElementById('etherscanKeyInput').value.trim();
-  if (!key) { showToast('⚠️ Enter an API key first'); return; }
-  localStorage.setItem('etherscan_key', key);
-  updateApiKeyStatus();
-  toggleApiPanel();
-  showToast('✓ API key saved');
-}
-
-function updateApiKeyStatus() {
-  const dot = document.getElementById('apiKeyStatus');
-  const stored = localStorage.getItem('etherscan_key');
-  if (dot) {
-    dot.className = 'api-status-dot ' + (stored ? 'set' : 'unset');
-  }
-  const input = document.getElementById('etherscanKeyInput');
-  if (input && stored) input.value = stored;
-}
-
-function toggleApiPanel() {
-  const body   = document.getElementById('apiKeyBody');
-  const toggle = document.getElementById('apiKeyToggle');
-  if (!body) return;
-  const open = body.style.display === 'none';
-  body.style.display   = open ? 'block' : 'none';
-  toggle.textContent   = open ? '▾ Close' : '▸ Configure';
-}
-
-// ---- RPC helpers ----
+async function fetchTxList(addr)   { return monadScanFetch('txlist',     addr); }
+async function fetchTokenTxs(addr) { return monadScanFetch('tokentx',    addr); }
+async function fetchNFTTxs(addr)   { return monadScanFetch('tokennfttx', addr); }
 async function rpc(method, params = []) {
   const r = await fetch(MONAD_RPC, {
     method: 'POST',
@@ -1096,33 +1033,7 @@ async function fetchERC20Balance(tokenAddr, walletAddr, decimals = 18) {
   return parseInt(hex || '0x0', 16) / Math.pow(10, decimals);
 }
 
-// ---- MonadScan (Etherscan V2) helpers ----
-function monadScanUrl(params) {
-  const p = new URLSearchParams({ chainid: MONAD_CHAIN_ID, apikey: getApiKey(), ...params });
-  return `${MONADSCAN_BASE}?${p}`;
-}
-
-async function monadScanFetch(params) {
-  try {
-    const r = await fetch(monadScanUrl(params));
-    const j = await r.json();
-    return j.status === '1' ? j.result : [];
-  } catch { return []; }
-}
-
-async function fetchTxList(addr) {
-  return monadScanFetch({ module: 'account', action: 'txlist', address: addr, sort: 'desc', offset: 15, page: 1 });
-}
-
-async function fetchTokenTxs(addr) {
-  return monadScanFetch({ module: 'account', action: 'tokentx', address: addr, sort: 'desc', offset: 50, page: 1 });
-}
-
-async function fetchNFTTxs(addr) {
-  return monadScanFetch({ module: 'account', action: 'tokennfttx', address: addr, sort: 'desc', offset: 20, page: 1 });
-}
-
-// ---- Derive ERC-20 holdings from transfer events ----
+// ---- RPC helpers ----
 async function deriveHoldings(addr, tokenTxs) {
   // Net balance per contract from transfer history
   const tokenMap = {};
@@ -1405,7 +1316,6 @@ function switchWTab(tab, el) {
 renderRecent();
 fetchAndRenderPrices();
 setInterval(fetchAndRenderPrices, 30000);
-updateApiKeyStatus();
 
 setInterval(() => {
   const cards = document.querySelectorAll('.pc-price');
