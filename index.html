@@ -695,48 +695,30 @@ nav {
 }
   .logo { font-size: .9rem; }
 }
+  
   .hamburger {
   display: none;
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 6px;
-  flex-direction: column;
+  padding: 4px;
   gap: 5px;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
 }
 
 .hamburger span {
   display: block;
   width: 22px;
   height: 2px;
-  background: #fff;
+  background: #ffffff;
   border-radius: 2px;
 }
 
 @media(max-width: 768px) {
   .nav-tabs { display: none; }
-  .hamburger { display: flex; }
-  }
-
-.mobile-menu {
-  display: none;
-  flex-direction: column;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 1rem;
-  gap: 8px;
-  position: sticky;
-  top: 56px;
-  z-index: 99;
-}
-
-.mobile-menu.open { display: flex; }
-
-@media(max-width: 768px) {
-  .nav-tabs { display: none; }
-  .hamburger { display: block; }
+  .hamburger { display: flex; } 
 }
 </style>
 </head>
@@ -751,7 +733,11 @@ nav {
   <div class="nav-right">
     <div class="network-badge"><div class="net-dot"></div>Monad</div>
     <button class="connect-btn" onclick="connectWallet()">Connect Wallet</button>
-    <button class="hamburger" onclick="toggleMenu()">☰</button>
+    <button class="hamburger" onclick="toggleMenu()">
+  <span></span>
+  <span></span>
+  <span></span>
+      </button>
   </div>
 </nav>
 
@@ -771,7 +757,7 @@ nav {
       <button class="search-btn" onclick="lookupCA()">Analyze ✦</button>
     </div>
   </div>
-
+  
   <!-- Result area -->
   <div id="caResult"></div>
 
