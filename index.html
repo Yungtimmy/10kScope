@@ -86,15 +86,19 @@
   }
 
   .nav-tabs {
-  display: flex;
   gap: 4px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 4px;
-  flex-shrink: 1; /* this one compresses, not the button */
+  flex-shrink: 1;
   min-width: 0;
-    }
+  display: none;
+}
+
+@media(min-width: 769px) {
+  .nav-tabs { display: flex; }
+}
   .nav-tab {
     padding: 6px 18px;
     border-radius: 7px;
@@ -707,6 +711,8 @@ nav {
   padding: 4px 8px;
   line-height: 1;
   flex-shrink: 0;
+  outline: none;
+  box-shadow: none;
 }
 
 .mobile-menu {
