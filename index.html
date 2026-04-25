@@ -291,7 +291,13 @@
   @keyframes shimmer {
     0%,100%{opacity:.5} 50%{opacity:1}
   }
-
+  
+<button class="hamburger" onclick="toggleMenu()">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+  
   .risk-badge {
     display: inline-block;
     padding: 3px 10px;
@@ -693,12 +699,39 @@ nav {
   display: none;
   background: transparent;
   border: none;
-  color: #fff;
-  padding: 6px 4px;
-  font-size: 1.2rem;
   cursor: pointer;
-  line-height: 1;
+  padding: 6px;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+@media(max-width: 768px) {
+  .nav-tabs { display: none; }
+  .hamburger { display: flex; }
   }
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+@media(max-width: 768px) {
+  .nav-tabs { display: none; }
+  .hamburger { display: flex; }
+}
 
 .mobile-menu {
   display: none;
