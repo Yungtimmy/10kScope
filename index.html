@@ -828,7 +828,7 @@ async function lookupCA() { /* upgraded: real Claude AI analysis via /api/analyz
       renderRecent();
     }
 
-    // Real AI analysis from Claude
+    // Real AI analysis from Gemini
     try {
       const aiText = await fetchAIAnalysis(best, pairs.length);
       const el = document.getElementById('aiTextArea');
@@ -837,7 +837,7 @@ async function lookupCA() { /* upgraded: real Claude AI analysis via /api/analyz
       const el = document.getElementById('aiTextArea');
       if (el) {
         el.classList.remove('loading');
-        el.innerHTML = '<span style="color:var(--muted);font-size:.8rem">⚠️ AI analysis unavailable — set ANTHROPIC_API_KEY in Vercel env vars.</span>';
+        el.innerHTML = '<span style="color:var(--muted);font-size:.8rem">⚠️ AI analysis unavailable — set GEMINI_API_KEY in Vercel env vars.</span>';
       }
     }
 
