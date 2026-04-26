@@ -764,6 +764,14 @@
       <button class="filter-chip" onclick="filterCoins('meme',this)">Meme</button>
       <button class="filter-chip" onclick="filterCoins('stable',this)">Stable</button>
     </div>
+    div style="padding: 0 1rem 1rem;">
+  <input 
+    id="priceSearch"
+    oninput="searchPrices(this.value)"
+    placeholder="🔍 Search token name or symbol..."
+    style="width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Syne',sans-serif;font-size:.85rem;outline:none;"
+  />
+</div>
   </div>
   <div class="prices-grid" id="pricesGrid"></div>
 </div>
@@ -1256,6 +1264,18 @@ function filterCoins(cat, el) {
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   renderPricesFromData(allFetchedPairs);
+}
+    function searchPrices(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    renderPricesFromData(allFetchedPairs);
+    return;
+  }
+  const filtered = allFetchedPairs.filter(p =>
+    p.baseToken?.name?.toLowerCase().includes(q) ||
+    p.baseToken?.symbol?.toLowerCase().includes(q)
+  );
+  renderPricesFromData(filtered);
 }
 
 function renderPriceCard(p) {
