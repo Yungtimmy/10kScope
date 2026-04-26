@@ -1240,17 +1240,57 @@ async function fetchAndRenderPrices() {
     }
     // ========== CATEGORY MAP ==========
 const TOKEN_CATEGORY_MAP = {
-  'MON':    'defi',
-  'WMON':   'defi',
-  'SHMON':  'defi',
-  'USDC':   'stablecoin',
-  'USDT':   'stablecoin',
-  'CHOG':   'meme',
-  'YAKI':   'meme',
-  'DAK':    'meme',
-  'MPUNK':  'nft',
-  'ARENA':  'gaming',
-  'NQUEST': 'gaming',
+  // DeFi / LST
+  'MON':       'defi',
+  'WMON':      'defi',
+  'SHMON':     'defi',
+  'LVRP':      'defi',
+  'LEVERUP':   'defi',
+  'ALLOCA':    'defi',
+  'SHARP':     'defi',
+  'KMON':      'defi',
+  'KINTSU':    'defi',
+  'APRMON':    'defi',
+  'APRIORI':   'defi',
+
+  // Stablecoins
+  'USDC':      'stablecoin',
+  'USDT':      'stablecoin',
+  'BLACK':     'stablecoin',
+
+  // Meme
+  'CHOG':      'meme',
+  'EMONAD':    'meme',
+  'BOB':       'meme',
+  'MONCOCK':   'meme',
+  'COCK':      'meme',
+  'NADS':      'meme',
+  'ANAGO':     'meme',
+  'DAK':       'meme',
+  'MOLANDAK':  'meme',
+  'CHINMMO':   'meme',
+  'MONSHI':    'meme',
+  'GMONAD':    'meme',
+  'GMO':       'meme',
+  'MOUCH':     'meme',
+  'HOGDOG':    'meme',
+  'HOG':       'meme',
+  'MONIGGA':   'meme',
+  'MONWOLF':   'meme',
+  'MONCHEL':   'meme',
+  'MOFU':      'meme',
+  'KDOG':      'meme',
+  'KEONE':     'meme',
+
+  // Gaming
+  'ARENA':     'gaming',
+  'TCG':       'gaming',
+  'MONAGOTCHI':'gaming',
+  'GOTCHI':    'gaming',
+  'NQUEST':    'gaming',
+
+  // NFT
+  'MPUNK':     'nft',
 };
 
 function getCategory(sym) {
@@ -1263,37 +1303,62 @@ function filterCoins(cat, el) {
   currentFilter = cat;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  renderPricesFromData(allFetchedPairs);
+  const q = document.getElementById('priceSearch')?.value?.trim().toLowerCase() || '';
+  applyFilters(q, currentFilter);
 }
-    function searchPrices(query) {
+
+function searchPrices(query) {
   const q = query.trim().toLowerCase();
-  if (!q) {
-    renderPricesFromData(allFetchedPairs);
+  applyFilters(q, currentFilter);
+}
+
+function applyFilters(query, cat) {
+  const grid = document.getElementById('pricesGrid');
+  if (!allFetchedPairs.length) return;
+
+  let results = allFetchedPairs;
+
+  // Apply search
+  if (query) {
+    results = results.filter(p =>
+      p.baseToken?.name?.toLowerCase().includes(query) ||
+      p.baseToken?.symbol?.toLowerCase().includes(query)
+    );
+  }
+
+  // Apply category
+  if (cat !== 'all') {
+    results = results.filter(p => getCategory(p.baseToken?.symbol) === cat);
+  }
+
+  if (results.length === 0) {
+    grid.innerHTML = `<div style="color:var(--muted);padding:2rem;grid-column:1/-1;text-align:center;font-size:.85rem">No tokens found.</div>`;
     return;
   }
-  const filtered = allFetchedPairs.filter(p =>
-    p.baseToken?.name?.toLowerCase().includes(q) ||
-    p.baseToken?.symbol?.toLowerCase().includes(q)
-  );
-  renderPricesFromData(filtered);
+
+  // Only show category headers on "All" tab with no search
+  if (cat === 'all' && !query) {
+    const groups = {};
+    for (const p of results) {
+      const c = getCategory(p.baseToken?.symbol);
+      if (!groups[c]) groups[c] = [];
+      groups[c].push(p);
+    }
+    const catLabels = { defi:'💠 DeFi', meme:'🐸 Meme', nft:'🖼 NFT', gaming:'🎮 Gaming', stablecoin:'💵 Stablecoins', other:'🔮 Other' };
+    const catOrder  = ['defi','stablecoin','meme','nft','gaming','other'];
+    let html = '';
+    for (const c of catOrder) {
+      if (!groups[c]) continue;
+      html += `<div style="grid-column:1/-1;margin-top:1.2rem;margin-bottom:.2rem">
+        <span style="font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px">${catLabels[c]}</span>
+      </div>`;
+      html += groups[c].map(p => renderPriceCard(p)).join('');
+    }
+    grid.innerHTML = html;
+  } else {
+    grid.innerHTML = results.map(p => renderPriceCard(p)).join('');
+  }
 }
-
-function renderPriceCard(p) {
-  const change = parseFloat(p.priceChange?.h24 || 0);
-  const changeClass = change >= 0 ? 'pos' : 'neg';
-  const changeSign = change >= 0 ? '+' : '';
-  const price = parseFloat(p.priceUsd || 0);
-  const priceStr = price === 0 ? 'N/A'
-    : price < 0.000001 ? '$' + price.toExponential(2)
-    : price < 0.01 ? '$' + price.toFixed(6)
-    : price < 1 ? '$' + price.toFixed(4)
-    : '$' + price.toFixed(2);
-  const sparks = generateSparks(change);
-  const sym = p.baseToken?.symbol || '??';
-  const colors = ['#e83d8a','#00ffb3','#f5c542','#ff6eb4','#4dc8ff','#a4ff72','#ff7c4d','#c884ff'];
-  const col = colors[Math.abs((sym.charCodeAt(0)||0) + (sym.charCodeAt(1)||0)) % colors.length];
-
-  return `
     <div class="price-card" onclick="window.open('${p.url || '#'}','_blank')">
       <div class="pc-top">
         <div class="pc-icon" style="background:${col}22;color:${col}">${sym.slice(0,2)}</div>
@@ -1322,9 +1387,10 @@ function renderPriceCard(p) {
 }
 
 function renderPricesFromData(pairs) {
-  const grid = document.getElementById('pricesGrid');
-  if (!pairs || pairs.length === 0) { renderPrices('all'); return; }
-
+  allFetchedPairs = pairs;
+  const q = document.getElementById('priceSearch')?.value?.trim().toLowerCase() || '';
+  applyFilters(q, currentFilter);
+}
   grid.innerHTML = pairs.map(p => {
     const change = parseFloat(p.priceChange?.h24 || 0);
     const changeClass = change >= 0 ? 'pos' : 'neg';
