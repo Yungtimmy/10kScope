@@ -1480,12 +1480,6 @@ function generateSparks(trend) {
   return pts.join(' ');
 }
 
-function filterCoins(cat, btn) {
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  if (allFetchedPairs.length > 0) renderPricesFromData(allFetchedPairs);
-  else renderPrices(cat);
-}
 
 // ========== WALLET — REAL ON-CHAIN INTEGRATION ==========
 
